@@ -48,30 +48,6 @@
       color: #ddd;
     }
 
-    /* THE CONTINUE BUTTON */
-    /* #continue-btn {
-      margin-top: 70px;
-      padding: 15px 40px;
-      background: #ddd;
-      color: rgb(0, 0, 0);
-      border: none;
-      border-radius: 30px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s;
-      display: block; 
-      margin: 30px auto 0 auto;
-    }
-
-    #continue-btn:hover {
-      transform: scale(1.05);
-    }
-
-    #continue-btn:active {
-      transform: scale(0.95);
-    } */
-
     .btn-style {
       padding: 15px 30px;
       background: #ddd; 
@@ -99,7 +75,7 @@
     /* EXTERNAL LINK BUTTONS (Fixed Bottom Position) */
     #rodney-btn, #station-btn {
         position: fixed;
-        bottom: 30px;       /* Distance from bottom */
+        bottom: 20px;       /* Distance from bottom */
         left: 50%;
         transform: translateX(-50%); /* Center Horizontal */
         z-index: 1999;      /* Above AR, below Overlay */
@@ -488,7 +464,7 @@
 
   <div id="status-pill" class="ui-element">
     <span id="status">Ready to scan...</span>
-    <span id="status-subtitle" class="sub-text" style="display: none;">click text to view</span>
+    <span id="status-subtitle" class="sub-text" style="display: none;">click textbox to enlarge</span>
   </div>
 
   <button id="rodney-btn" class="btn-style" onclick="window.open('https://www.youtube.com/shorts/7ExFqDRTDJI', '_blank')">

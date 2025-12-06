@@ -3,55 +3,276 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MTA AR Experience</title>
+  <title>Subway Stories: An AR Experience</title>
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100vh; }
-    video { z-index: -10 !important; }
-    /* instructions */
-    #ui-panel {
+    body { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100vh; font-family: Arial, sans-serif;}
+
+    /* --- 1. FULL SCREEN OVERLAY --- */
+    #overlay-screen {
       position: fixed;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.25);
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.75); 
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       color: white;
-      padding: 15px;
-      border-radius: 10px;
-      font-family: Arial, sans-serif;
-      width: 300px;
-      z-index: 1000;
       backdrop-filter: blur(10px);
-      /* TRANSITION SETTINGS */
-      transition: transform 0.3s ease-in-out;
-      transform: translateX(0); /* Default state: Visible */
+      transition: opacity 0.5s ease;
+    }
+    
+    /* Content Box inside Overlay */
+    .overlay-content {
+      text-align: left;
+      max-width: 80%;
+      padding: 20px;
     }
 
-    /* The Hidden State (Moves panel off-screen to the left) */
-    #ui-panel.closed {
-      transform: translateX(-100%); /* Move 110% to the left to hide completely */
+    .overlay-content h1 {
+      text-align: center; 
+      font-size: 24px;
+      margin-bottom: 50px;
+      color: #FFD700; 
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
 
-    /* The Toggle Button */
-    #ui-toggle-btn {
-      position: absolute;
-      top: 0;
-      right: -40px; /* Hangs off the right side of the panel */
-      width: 35px;
-      height: 35px;
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
+    .overlay-content p {
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      color: #ddd;
+    }
+
+    /* THE CONTINUE BUTTON */
+    /* #continue-btn {
+      margin-top: 70px;
+      padding: 15px 40px;
+      background: #ddd;
+      color: rgb(0, 0, 0);
       border: none;
-      border-radius: 5px 5px 5px 5px; /* Rounded corners on right only */
-      cursor: pointer;
-      backdrop-filter: blur(10px);
+      border-radius: 30px;
+      font-size: 18px;
       font-weight: bold;
-      font-size: 14px;
-      outline: none;
+      cursor: pointer;
+      transition: transform 0.2s;
+      display: block; 
+      margin: 30px auto 0 auto;
     }
+
+    #continue-btn:hover {
+      transform: scale(1.05);
+    }
+
+    #continue-btn:active {
+      transform: scale(0.95);
+    } */
+
+    .btn-style {
+      padding: 15px 30px;
+      background: #ddd; 
+      color: rgb(0, 0, 0);
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+      text-transform: uppercase;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px; /* Space between text and icon */
+    }
+    .btn-style:hover { transform: scale(1.05); }
+    .btn-style:active { transform: scale(0.95); }
+
+    /* CONTINUE BUTTON (Static Position) */
+    #continue-btn { margin: 30px auto 0 auto; display: block; }
+
+    /* EXTERNAL LINK BUTTONS (Fixed Bottom Position) */
+    #rodney-btn, #station-btn {
+        position: fixed;
+        bottom: 30px;       /* Distance from bottom */
+        left: 50%;
+        transform: translateX(-50%); /* Center Horizontal */
+        z-index: 1999;      /* Above AR, below Overlay */
+        display: none;      /* Hidden by default */
+        white-space: nowrap;
+    }
+
+    /* --- 2. SEPARATED UI ELEMENTS --- */
+   .ui-element {
+      position: fixed;
+      top: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      z-index: 1000;
+      border-radius: 30px;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      
+      /* Start hidden (pushed up off-screen) */
+      transform: translateY(-150%); 
+    }
+
+    /* A. The Status Pill (Centered) */
+    #status-pill {
+    /* Positioning */
+    left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    
+    /* Size & Layout */
+    width: 225px;
+    display: flex;            
+    flex-direction: column;    
+    align-items: center;    
+    justify-content: center; 
+    
+    padding: 10px 0;
+    font-weight: bold;
+  }
+
+  /* New Style for the "click text to view" line */
+  .sub-text {
+    font-size: 11px;    
+    font-weight: normal; 
+    opacity: 0.8;     
+    margin-top: 4px;      
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* B. The Info Button (Top Right) */
+  #info-button {
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: serif;
+  }
+
+  /* --- ANIMATION CLASSES --- */
+
+  /* Utility to hide things */
+  .hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  /* Slide in the Center Pill (keeps horizontal centering) */
+  .slide-in-center {
+    transform: translateX(-50%) translateY(0) !important;
+  }
+
+  /* Slide in the Corner Button (no horizontal centering needed) */
+  .slide-in-corner {
+    transform: translateY(0) !important;
+  }
+
+  /* AR Canvas Z-Index Fix */
+  .a-canvas { 
+      z-index: 1 !important; 
+      cursor: crosshair;
+      pointer-events: auto !important;
+  }
+
+  .static-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); /* Dark background */
+      z-index: 3000; /* Highest priority */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+  }
+
+  .static-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+  }
+
+  .card-container {
+      position: relative;
+      width: 85%;
+      max-width: 400px;
+      background: transparent;
+      text-align: center;
+  }
+
+  .card-container img {
+      width: 100%;
+      height: auto;
+  }
+
+  .close-card-btn {
+      margin-top: 20px;
+      padding: 10px 30px;
+      background: white;
+      color: black;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+  }
   </style>
 
   <script>
+    // --- COMPONENT TO OPEN OVERLAY ---
+    AFRAME.registerComponent('info-popup', {
+      schema: { target: {type: 'string'} },
+      init: function () {
+        // When the AR Plane is clicked...
+        this.el.addEventListener('click', () => {
+          console.log("Plane Clicked! Opening: " + this.data.target);
+          // 1. Find the HTML overlay
+          const overlay = document.getElementById(this.data.target);
+          // 2. Make it visible
+          overlay.classList.add('visible');
+        });
+      }
+    });
+
+    // --- COMPONENT: TAP TO SWITCH MODELS ---
+    AFRAME.registerComponent('click-swapper', {
+      init: function () {
+        console.log("Click Swapper Loaded");
+        this.defaultModel = this.el.querySelector('.model-default');
+        this.waveModel = this.el.querySelector('.model-wave');
+        this.isWaving = false;
+
+        // Listen for click on the PARENT wrapper
+        this.el.addEventListener('click', (evt) => {
+          console.log("⚡ CLICK DETECTED!");
+          if (this.isWaving) {
+            this.defaultModel.setAttribute('visible', true);
+            this.waveModel.setAttribute('visible', false);
+            this.isWaving = false;
+          } else {
+            this.defaultModel.setAttribute('visible', false);
+            this.waveModel.setAttribute('visible', true);
+            this.isWaving = true;
+          }
+        });
+      }
+    });
+
   AFRAME.registerComponent('midpoint-handler', {
     init: function () {
       this.target1 = document.querySelector('#personTarget');
@@ -111,37 +332,74 @@
       filterMinCF: 0.001; 
       filterBeta: 10; 
       uiLoading: no; uiError: no; uiScanning: no;"
-    embedded
-    color-space="sRGB"
+    embedded color-space="sRGB"
     renderer="colorManagement: true, physicallyCorrectLights"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    device-orientation-permission-ui="enabled: false"
+    cursor="rayOrigin: mouse; fuse: false"
+    raycaster="objects: .clickable; far: 10000; interval: 100">
     
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
     <a-assets>
       <a-asset-item id="person-asset" src="./models/default_gltf/rodney3d_default.gltf"></a-asset-item>
       <a-asset-item id="person-waving-asset" src="./models/wave_gtlf/rodney3d_wave.gltf"></a-asset-item>
-      <a-asset-item id="station-asset" src="./models/sample_station/scene.gltf"></a-asset-item>
+      <a-asset-item id="station-asset" src="./models/station_gltf/station.gltf"></a-asset-item>
       
       <!-- <a-asset-item id="person-obj" src="./models/person_wave/rodney3d_wave.obj"></a-asset-item>
       <a-asset-item id="person-mtl" src="./models/person_wave/rodney3d_wave.mtl"></a-asset-item> -->
       
       <!-- <a-asset-item id="station-obj" src="./models/sample_station/model.obj"></a-asset-item>
       <a-asset-item id="station-mtl" src="./models/sample_station/model.mtl"></a-asset-item> -->
+
+      <img id="conductorfact" src="./images/conductorfact.png">
+      <img id="stationfact" src="./images/stationfact.png">
+      <img id="speechbubble" src="./images/rodneyspeech.png">
     </a-assets>
 
-    <!-- <a-light type="directional" position="1 1 1" intensity="2"></a-light>
-    <a-light type="ambient" intensity="1"></a-light> -->
+    <a-light type="directional" position="1 1 1" intensity="1"></a-light>
+    <a-light type="ambient" intensity="1"></a-light>
     
-    <a-entity id="personTarget" mindar-image-target="targetIndex: 0">
-      <a-entity id="modelPerson">
+    <a-entity id="personTarget" mindar-image-target="targetIndex: 0">\
+
+      <a-plane 
+          id="planePerson"
+          class="clickable"
+          info-popup="target: overlay-person"
+          src="#conductorfact"
+          transparent="true"
+          shader="flat"
+          width="0.868" 
+          height="0.7" 
+          position="0 0 2.2"
+          rotation="80 0 0">
+      </a-plane>
+
+      <a-entity id="modelPerson" click-swapper>
         <a-entity 
+            class="model-default"
             gltf-model="#person-asset" 
             scale="0.1 0.1 0.1" 
             rotation="80 0 0" 
-            position="0 0 0">
+            position="0 0 0"
+            visible="true">
         </a-entity>
+
+        <a-entity 
+            class="model-wave"
+            gltf-model="#person-waving-asset" 
+            scale="0.1 0.1 0.1" 
+            rotation="80 0 0" 
+            position="0 0 0"
+            visible="false">
+        </a-entity>
+
+        <a-box 
+            class="clickable" 
+            opacity=0" 
+            scale="1.5 1.5 1.5" 
+            position="0 0 0.75">
+          </a-box>
 
         <!-- <a-entity 
             obj-model="obj: #person-obj; mtl: #person-mtl" 
@@ -153,10 +411,24 @@
     </a-entity>
     
     <a-entity id="stationTarget" mindar-image-target="targetIndex: 1">
+      <a-plane 
+          id="planeStation"
+          class="clickable"
+          info-popup="target: overlay-station"
+          src="#stationfact"
+          transparent="true"
+          shader="flat"
+          width="0.868" 
+          height="0.7" 
+          scale="0.8 0.8 0.8"
+          position="0.2 0 2"
+          rotation="70 0 0">
+      </a-plane>
+
       <a-entity id="modelStation">
         <a-entity 
             gltf-model="#station-asset" 
-            scale="0.1 0.1 0.1" 
+            scale="0.075 0.075 0.075" 
             rotation="70 0 0" 
             position="0 0 0">
         </a-entity>
@@ -164,21 +436,31 @@
     </a-entity>
 
     <a-entity id="mergedModel" midpoint-handler visible="false">
+      <a-plane 
+          class="clickable"
+          info-popup="target: overlay-merged"
+          src="#speechbubble"
+          transparent="true" shader="flat"
+          width="1" height="0.8" 
+          scale="0.7 0.7 0.7"
+          position="0 -0.5 1.6" 
+          rotation="70 0 0">
+      </a-plane>
         
        <a-entity rotation="0 0 0" scale="1.5 1.5 1.5">
           
           <a-entity 
             gltf-model="#station-asset" 
-            scale="0.1 0.1 0.1" 
+            scale="0.075 0.075 0.075" 
             rotation="70 0 0" 
             position="0 0 0">
           </a-entity>
 
           <a-entity 
             gltf-model="#person-waving-asset" 
-            scale="0.003 0.003 0.003" 
-            rotation="70 0 0" 
-            position="0.5 0.4 0.1">
+            scale="0.04 0.04 0.04" 
+            rotation="60 0 0"
+            position="-0.2 -0.5 0.35">
           </a-entity>
 
           <!-- <a-entity 
@@ -193,59 +475,173 @@
     
   </a-scene>
 
-  <div id="ui-panel">
+  <div id="overlay-screen">
+    <div class="overlay-content">
+      <h1>Subway Stories: <br/> An AR Experience</h1>
+      <p>1. Scan the <strong>Worker Card</strong> to see its model.</p>
+      <p>2. Tap the model to see them wave!</p>
+      <p>3. Scan the <strong>Station Card</strong> to see its model. </p>
+      <p>4. Bring the cards together to merge models <br/> &nbsp; &nbsp; and see a unique interaction!</p>
+      <button id="continue-btn" class="btn-style" onclick="startExperience()">CONTINUE</button>
+    </div>
+  </div>
+
+  <div id="status-pill" class="ui-element">
+    <span id="status">Ready to scan...</span>
+    <span id="status-subtitle" class="sub-text" style="display: none;">click text to view</span>
+  </div>
+
+  <button id="rodney-btn" class="btn-style" onclick="window.open('https://www.youtube.com/shorts/7ExFqDRTDJI', '_blank')">
+    Learn More About Rodney
+    <i class="fas fa-external-link-alt"></i>
+  </button>
+
+  <button id="station-btn" class="btn-style" onclick="window.open('https://en.wikipedia.org/wiki/14th_Street%E2%80%93Union_Square_station')">
+    Learn More About This Station
+    <i class="fas fa-external-link-alt"></i>
+  </button>
+
+  <div id="info-button" class="ui-element" onclick="openInstructions()">i</div>
+
+  <div id="overlay-person" class="static-overlay">
+      <div class="card-container">
+          <img src="./images/conductorfact.png" alt="Person Info">
+          <button class="close-card-btn" onclick="closeOverlay('overlay-person')">CLOSE</button>
+      </div>
+  </div>
+
+  <div id="overlay-station" class="static-overlay">
+      <div class="card-container">
+          <img src="./images/stationfact.png" alt="Station Info">
+          <button class="close-card-btn" onclick="closeOverlay('overlay-station')">CLOSE</button>
+      </div>
+  </div>
+
+  <div id="overlay-merged" class="static-overlay">
+      <div class="card-container">
+          <img src="./images/rodneyspeech.png" alt="Merged Info">
+          <button class="close-card-btn" onclick="closeOverlay('overlay-merged')">CLOSE</button>
+      </div>
+  </div>
+
+  <!-- <div id="ui-panel">
   <button id="ui-toggle-btn" onclick="toggleUI()">&lt;&lt;</button>
   <h3 style="margin: 0 0 10px 0; font-size: 18px;">Instructions</h3>
-  <!-- <p style="margin: 5px 0; font-size: 9px;">{Version: MindAR}</p> -->
+  NOT USED COMMENT OUT IF UNCOMMENTING BLOCK: <p style="margin: 5px 0; font-size: 9px;">{Version: MindAR}</p> 
   <p style="margin: 5px 0; font-size: 13px;">1. Point camera at person card for person model</p>
   <p style="margin: 5px 0; font-size: 13px;">2. Point at station card for station model</p>
   <p style="margin: 5px 0; font-size: 13px;">3. Show both cards together for interaction</p>
   <hr style="border: 1px solid #666; margin: 10px 0;">
   <p style="margin: 5px 0; font-size: 12px;"><strong>Status:</strong> <span id="status">Scanning...</span></p>
-  </div>
+  </div> -->
 
   <script>
+    function closeOverlay(id) {
+        document.getElementById(id).classList.remove('visible');
+    }
+
+    // --- UI LOGIC ---
+    function startExperience() {
+      // 1. Fade out the big overlay
+      const overlay = document.getElementById('overlay-screen');
+      overlay.classList.add('hidden');
+
+      // 2. Slide in BOTH UI elements
+      document.getElementById('status-pill').classList.add('slide-in-center');
+      document.getElementById('info-button').classList.add('slide-in-corner');
+    }
+
+    function openInstructions() {
+      // 1. Bring back the big overlay
+      document.getElementById('overlay-screen').classList.remove('hidden');
+
+      // 2. Slide both UI elements back up (hide them)
+      document.getElementById('status-pill').classList.remove('slide-in-center');
+      document.getElementById('info-button').classList.remove('slide-in-corner');
+    }
+    
+    // --- AR LOGIC ---
     document.addEventListener("DOMContentLoaded", function() {
       const personTarget = document.querySelector('#personTarget');
       const stationTarget = document.querySelector('#stationTarget');
+
       const modelPerson = document.querySelector('#modelPerson');
       const modelStation = document.querySelector('#modelStation');
-      const mergedModel = document.querySelector('#mergedModel'); // Now outside
+      const mergedModel = document.querySelector('#mergedModel');
+
       const statusEl = document.querySelector('#status');
+      const subtitleEl = document.querySelector('#status-subtitle');
+
+      const planePerson = document.querySelector('#planePerson');
+      const planeStation = document.querySelector('#planeStation');
+      const planeMerged = document.querySelector('#planeMerged');
+
+      const rodneyBtn = document.querySelector('#rodney-btn');
+      const stationBtn = document.querySelector('#station-btn');
 
       let personVisible = false;
       let stationVisible = false;
 
+      function togglePlane(plane, isVisible) {
+        if (!plane) return;
+        plane.setAttribute('visible', isVisible);
+        if (isVisible) {
+            plane.classList.add('clickable');
+        } else {
+            plane.classList.remove('clickable');
+        }
+      }
+
       function updateGameLogic() {
+        if(subtitleEl) subtitleEl.style.display = 'none';
+        if(rodneyBtn) rodneyBtn.style.display = 'none';
+        if(stationBtn) stationBtn.style.display = 'none';
+
         if (personVisible && stationVisible) {
           // MERGED STATE
           modelPerson.setAttribute('visible', false);
           modelStation.setAttribute('visible', false);
-          
+
+          togglePlane(planePerson, false);
+          togglePlane(planeStation, false);
+        
           // Show the merged model (The 'midpoint-handler' determines positioning)
           mergedModel.setAttribute('visible', true);
+          togglePlane(planeMerged, true);
+
           statusEl.textContent = "Both cards detected!";
           statusEl.style.color = "#75d15a";
+          subtitleEl.style.display = 'block';
         } else {
-            
           // SEPARATE STATE
           mergedModel.setAttribute('visible', false);
+          togglePlane(planeMerged, false);
 
           if (personVisible) {
             modelPerson.setAttribute('visible', true);
-            statusEl.textContent = "Found person card!"
+            togglePlane(planePerson, true);
+
+            rodneyBtn.style.display = 'flex';
+
+            statusEl.textContent = "Worker card detected."
+            statusEl.style.color = "#FFF";
+            subtitleEl.style.display = 'block';
           }
           if (stationVisible) {
             modelStation.setAttribute('visible', true);
-            statusEl.textContent = "Found station card!"
+            togglePlane(planeStation, true);
+
+            stationBtn.style.display = 'flex';
+            
+            statusEl.textContent = "Station card detected."
+            statusEl.style.color = "#FFF";
+            subtitleEl.style.display = 'block';
           }
 
           if (!stationVisible && !personVisible) {
             statusEl.textContent = "Scanning..."
+            statusEl.style.color = "#FFD700";
           }
-
-          //statusEl.textContent = personVisible || stationVisible ? "Found one..." : "Scanning...";
-          statusEl.style.color = "#FFF";
         }
       }
 

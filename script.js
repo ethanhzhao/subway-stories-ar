@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
 
       if (!stationVisible && !personVisible) {
-        statusEl.textContent = "Scanning..."
+        statusEl.textContent = "Looking for a card..."
         statusEl.style.color = "#FFD700";
       }
     }
